@@ -1,4 +1,4 @@
-import { Request } from "../models/Request.js";
+import { tokenRequest } from "../models/TokenRequest.js";
 import { z } from "zod";
 
 const NullableUrl = z
@@ -32,7 +32,7 @@ export async function getRequest(req, res, next) {
       if (!isNaN(max)) filter.kycLevel = { $lte: max };
     }
 
-    const request = await Request.find(filter).sort({ privacyScore: -1 });
+    const request = await tokenRequest.find(filter).sort({ privacyScore: -1 });
     res.json(request);
   } catch (error) {
     next(error);
@@ -41,7 +41,7 @@ export async function getRequest(req, res, next) {
 
 export async function getRequestById(req, res, next) {
   try {
-    const request = await Request.findById(req.params.id);
+    const request = await tokenRequest.findById(req.params.id);
     if (!request) return res.status(404).json({ message: "Service not found" });
     res.json(request);
   } catch (error) {
@@ -52,7 +52,7 @@ export async function getRequestById(req, res, next) {
 export async function createRequest(req, res, next) {
   try {
     requestValidator.parse(req.body);
-    const newRequest = await Request.create(req.body);
+    const newRequest = await tokenRequest.create(req.body);
     res.status(201).json(newRequest);
   } catch (error) {
     next(error);
@@ -61,7 +61,7 @@ export async function createRequest(req, res, next) {
 
 export async function updateRequest(req, res, next) {
   try {
-    const updatedRequest = await Request.findByIdAndUpdate(
+    const updatedRequest = await tokenRequest.findByIdAndUpdate(
       req.params.id,
       req.body,
       { new: true, runValidators: true }
@@ -76,7 +76,7 @@ export async function updateRequest(req, res, next) {
 
 export async function deleteRequest(req, res, next) {
   try {
-    const deleted = await Request.findByIdAndDelete(req.params.id);
+    const deleted = await tokenRequest.findByIdAndDelete(req.params.id);
     if (!deleted)
       return res.status(404).json({ message: "Request not found" });
 

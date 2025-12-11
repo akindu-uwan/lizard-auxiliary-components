@@ -5,8 +5,10 @@ import cookieParser from "cookie-parser";
 import session from "express-session";
 import { connectDB } from "./config/db.js";
 import serviceRoutes from "./routes/serviceRoutes.js";
-import requestRoutes from "./routes/requestRoutes.js";
 import partnerRoutes from "./routes/partnerRoutes.js";
+import serviceRequestRoutes from "./routes/serviceRequestRoutes.js";
+import tokenRequestRoutes from "./routes/tokenRequestRoutes.js";
+import partnerRequestRoutes from "./routes/partnerRequestRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import { notFound } from "./middleware/notFoundMiddleware.js";
 import { errorHandler } from "./middleware/errorMiddleware.js";
@@ -32,7 +34,7 @@ app.use(session({
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    maxAge: 1000 * 60 * 60 * 8 // 8 hours
+    maxAge: 1000 * 60 * 60 * 8 
   }
 }));
 
@@ -44,8 +46,10 @@ app.get("/api/health", (req, res) => {
 });
 
 app.use("/api/services", serviceRoutes);
-app.use("/api/request", requestRoutes);
-app.use("/api/partner", partnerRoutes);
+app.use("/api/partners", partnerRoutes);
+app.use("/api/services/request", serviceRequestRoutes);
+app.use("/api/tokens/request", tokenRequestRoutes);
+app.use("/api/partners/request", partnerRequestRoutes);
 app.use('/api/admin/auth', adminRoutes);
 // app.use('/api/admin/tokens', adminTokenRoutes);
 // app.use('/api/admin/partners', adminPartnerRoutes);

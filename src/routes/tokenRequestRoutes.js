@@ -5,7 +5,7 @@ import {
   createRequest,
   updateRequest,
   deleteRequest
-} from "../controllers/requestController.js";
+} from "../controllers/tokenController.js";
 
 const router = express.Router();
 

@@ -28,4 +28,4 @@ const requestSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
-export const Request = mongoose.model("Request", requestSchema);
+export const tokenRequest = mongoose.model("TokenRequest", requestSchema);

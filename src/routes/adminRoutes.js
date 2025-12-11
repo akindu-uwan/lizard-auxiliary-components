@@ -3,8 +3,10 @@ import { adminLogin, adminLogout, adminStatus } from "../controllers/adminContro
 
 const router = express.Router();
 
-router.get("/login", adminLogin);
+router.post("/login", adminLogin);
+
 router.post("/logout", adminLogout);
-router.post("/status", adminStatus);
+
+router.get("/status", adminStatus);
 
 export default router;
