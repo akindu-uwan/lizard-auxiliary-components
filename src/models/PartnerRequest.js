@@ -1,93 +1,45 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const partnerSchema = new mongoose.Schema(
   {
-    projectName: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    companyName: {
-      type: String,
-      trim: true,
-    },
+    projectName: { type: String, required: true, trim: true },
+    companyName: { type: String, trim: true },
 
-    // Make enum style similar to `serviceSchema` (all lowercase)
     serviceType: {
       type: String,
-      enum: ['dex', 'aggregator', 'bridge', 'lending', 'wallet', 'other'],
+      enum: ["DEX", "Aggregator", "Bridge", "Lending", "Wallet", "Other"],
       required: true,
     },
 
-    primaryChain: {
-      type: String,
-      required: true,
-      trim: true,
-    },
+    primaryChain: { type: String, required: true, trim: true },
+    supportedChains: { type: String, trim: true },
 
-    // Like currencies/networks/attributes in serviceSchema → array of strings
-    supportedChains: [
-      {
-        type: String,
-        trim: true,
-      },
-    ],
+    website: { type: String, required: true, trim: true },
+    apiBaseUrl: { type: String, trim: true },
+    apiDocsUrl: { type: String, trim: true },
 
-    website: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    apiBaseUrl: {
-      type: String,
-      trim: true,
-    },
-    apiDocsUrl: {
-      type: String,
-      trim: true,
-    },
-
-    contactName: {
-      type: String,
-      required: true,
-      trim: true,
-    },
+    contactName: { type: String, required: true, trim: true },
     contactEmail: {
       type: String,
       required: true,
       trim: true,
       lowercase: true,
     },
-    telegram: {
-      type: String,
-      trim: true,
-    },
-    discord: {
-      type: String,
-      trim: true,
-    },
 
-    estimatedDailyVolume: {
-      type: String,
-      trim: true,
-    },
+    telegram: { type: String, trim: true },
+    discord: { type: String, trim: true },
 
-    notes: {
-      type: String,
-      trim: true,
-    },
+    estimatedDailyVolume: { type: String, trim: true },
+    notes: { type: String, trim: true },
 
     status: {
       type: String,
-      enum: ['pending', 'approved', 'rejected'],
-      default: 'pending',
+      enum: ["pending", "approved", "rejected"],
+      default: "pending",
       index: true,
     },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
-// Match style of `serviceRequest`
-export const partnerRequest = mongoose.model('PartnerRequest', partnerSchema);
+export const partnerRequest = mongoose.model("PartnerRequest", partnerSchema);

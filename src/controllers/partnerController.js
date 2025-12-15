@@ -1,48 +1,49 @@
-import Partner from "../models/Partner.js";
+import { Partner } from "../models/Partner.js";
 import { z } from "zod";
 
-export const partnerSignupSchema = z.object({
-  projectName: z.string().min(1, "Project name is required"),
+const NullableUrl = z
+  .string()
+  .url()
+  .or(z.literal(""))
+  .optional()
+  .transform((v) => (v === "" ? undefined : v));
+
+export const partnerRequestValidator = z.object({
+  projectName: z.string().min(2),
   companyName: z.string().optional(),
 
-  serviceType: z.enum(["DEX", "Aggregator", "Bridge", "Lending", "Wallet", "Other"], {
-    required_error: "Service type is required",
-  }),
+  serviceType: z.enum([
+    "DEX",
+    "Aggregator",
+    "Bridge",
+    "Lending",
+    "Wallet",
+    "Other",
+  ]),
 
-  primaryChain: z.string().min(1, "Primary chain is required"),
+  primaryChain: z.string().min(2),
   supportedChains: z.string().optional(),
 
-  website: z
-    .string()
-    .min(1, "Website is required")
-    .regex(/^https?:\/\/.+/i, "Enter a valid URL (including http:// or https://)"),
+  website: z.string().url(),
 
-  apiBaseUrl: z
-    .string()
-    .regex(/^https?:\/\/.+/i, "Enter a valid URL (including http:// or https://)")
-    .optional()
-    .or(z.literal("").transform(() => undefined)),
+  apiBaseUrl: NullableUrl,
+  apiDocsUrl: NullableUrl,
 
-  apiDocsUrl: z
-    .string()
-    .regex(/^https?:\/\/.+/i, "Enter a valid URL (including http:// or https://)")
-    .optional()
-    .or(z.literal("").transform(() => undefined)),
-
-  contactName: z.string().min(1, "Contact name is required"),
-  contactEmail: z
-    .string()
-    .min(1, "Contact email is required")
-    .email("Enter a valid email address"),
+  contactName: z.string().min(2),
+  contactEmail: z.string().email(),
 
   telegram: z.string().optional(),
   discord: z.string().optional(),
   estimatedDailyVolume: z.string().optional(),
   notes: z.string().optional(),
 
-  acceptTerms: z
-    .boolean()
-    .refine((val) => val === true, { message: "You must accept to submit" }),
+  // ✅ add this because frontend sends it
+  acceptTerms: z.boolean().optional(),
+});
+
+// Only for status updates (admin)
+export const partnerStatusValidator = z.object({
+  status: z.enum(["pending", "approved", "rejected"]),
 });
 
 /**
@@ -50,24 +51,16 @@ export const partnerSignupSchema = z.object({
  */
 export const createPartner = async (req, res, next) => {
   try {
-    // Validate body with Zod
-    const parsed = partnerSignupSchema.parse(req.body);
+    const parsed = partnerRequestValidator.parse(req.body);
 
-    // Prepare data for DB (remove acceptTerms, trim some fields)
-    const {
-      acceptTerms, // eslint-disable-line @typescript-eslint/no-unused-vars
-      website,
-      apiBaseUrl,
-      apiDocsUrl,
-      ...rest
-    } = parsed;
+    const { acceptTerms, website, apiBaseUrl, apiDocsUrl, ...rest } = parsed;
 
     const payload = {
       ...rest,
       website: website.trim(),
       apiBaseUrl: apiBaseUrl?.trim(),
       apiDocsUrl: apiDocsUrl?.trim(),
-      status: "pending", // default when someone applies
+      status: "pending",
     };
 
     const partner = await Partner.create(payload);
@@ -77,10 +70,9 @@ export const createPartner = async (req, res, next) => {
       partner,
     });
   } catch (err) {
-    // Handle Zod validation errors -> match frontend error format
     if (err instanceof z.ZodError) {
       const details = err.issues.map((issue) => ({
-        path: issue.path, // e.g. ["website"]
+        path: issue.path,
         message: issue.message,
       }));
 
@@ -90,28 +82,66 @@ export const createPartner = async (req, res, next) => {
       });
     }
 
-    // Pass other errors to global error handler
     return next(err);
   }
 };
 
 /**
  * GET /api/partners?status=approved
- * (used by your PartnerSignupPage to show "Live routing partners")
  */
 export const getPartners = async (req, res, next) => {
   try {
     const { status } = req.query;
     const filter = {};
 
-    if (status) {
-      filter.status = status;
-    }
+    if (status) filter.status = status;
 
     const partners = await Partner.find(filter).sort({ createdAt: -1 });
-
     return res.json(partners);
   } catch (err) {
+    return next(err);
+  }
+};
+
+/**
+ * PUT /api/partners/:id
+ * Admin: update status (pending/approved/rejected)
+ * This supports your admin UI approve/reject.
+ */
+export const updatePartner = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    // Validate status
+    const parsed = partnerStatusValidator.parse(req.body);
+
+    const updated = await Partner.findByIdAndUpdate(
+      id,
+      { status: parsed.status },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ message: "Partner not found" });
+    }
+
+    return res.json({
+      message: "Partner updated",
+      partner: updated,
+    });
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      const details = err.issues.map((issue) => ({
+        path: issue.path,
+        message: issue.message,
+      }));
+
+      return res.status(400).json({
+        message: "Validation failed",
+        details,
+      });
+    }
+
     return next(err);
   }
 };

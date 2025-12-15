@@ -6,6 +6,8 @@ import session from "express-session";
 import { connectDB } from "./config/db.js";
 import serviceRoutes from "./routes/serviceRoutes.js";
 import partnerRoutes from "./routes/partnerRoutes.js";
+import tokenRoutes from "./routes/tokenRoutes.js";
+import authKeyRoutes from "./routes/authKeyRoutes.js";
 import serviceRequestRoutes from "./routes/serviceRequestRoutes.js";
 import tokenRequestRoutes from "./routes/tokenRequestRoutes.js";
 import partnerRequestRoutes from "./routes/partnerRequestRoutes.js";
@@ -14,6 +16,8 @@ import { notFound } from "./middleware/notFoundMiddleware.js";
 import { errorHandler } from "./middleware/errorMiddleware.js";
 
 dotenv.config();
+console.log("JWT_SECRET loaded?", !!process.env.JWT_SECRET);
+
 connectDB();
 
 const app = express();
@@ -45,14 +49,15 @@ app.get("/api/health", (req, res) => {
   });
 });
 
+app.use("/api/auth", authKeyRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/partners", partnerRoutes);
-app.use("/api/services/request", serviceRequestRoutes);
-app.use("/api/tokens/request", tokenRequestRoutes);
-app.use("/api/partners/request", partnerRequestRoutes);
+app.use("/api/tokens", tokenRoutes);
+app.use("/api/servicerequests", serviceRequestRoutes);
+app.use("/api/tokenrequests", tokenRequestRoutes);
+app.use("/api/partnerrequests", partnerRequestRoutes);
 app.use('/api/admin/auth', adminRoutes);
-// app.use('/api/admin/tokens', adminTokenRoutes);
-// app.use('/api/admin/partners', adminPartnerRoutes);
+
 
 app.use(notFound);
 app.use(errorHandler);
