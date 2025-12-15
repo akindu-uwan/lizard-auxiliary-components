@@ -25,9 +25,18 @@ const app = express();
 app.use(express.json());
 
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true
+  origin: [
+    "http://localhost:3000",
+    "https://lizard-frontend-qo5a.vercel.app"
+  ],
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
 }));
+app.options("*", (req, res) => {
+  res.sendStatus(204);
+});
+
 app.use(express.json());
 app.use(cookieParser());
 if (!process.env.VERCEL) {
