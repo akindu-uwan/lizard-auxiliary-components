@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import session from "express-session";
+import serverless from "serverless-http";
 
 import { connectDB } from "./config/db.js";
 import serviceRoutes from "./routes/serviceRoutes.js";
@@ -100,4 +101,4 @@ app.use("/api/admin/auth", adminRoutes);
 app.use(notFound);
 app.use(errorHandler);
 
-export default app;
+export default serverless(app);
