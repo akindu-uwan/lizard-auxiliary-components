@@ -23,16 +23,20 @@ connectDB();
 const app = express();
 
 app.use(express.json());
+import cors from "cors";
 
-app.use(cors({
-  Access-Control-Allow-Origin:"https://lizard-frontend-qo5a.vercel.app",
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-}));
-app.options("*", (req, res) => {
-  res.sendStatus(204);
-});
+app.use(
+  cors({
+    origin: "https://lizard-frontend-qo5a.vercel.app",
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
+// Preflight support
+app.options("*", cors());
+
 
 app.use(express.json());
 app.use(cookieParser());
