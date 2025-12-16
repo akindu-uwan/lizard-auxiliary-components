@@ -3,8 +3,6 @@ import cors from "cors";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import session from "express-session";
-import serverless from "serverless-http";
-
 import { connectDB } from "./config/db.js";
 import serviceRoutes from "./routes/serviceRoutes.js";
 import partnerRoutes from "./routes/partnerRoutes.js";
@@ -18,51 +16,20 @@ import { notFound } from "./middleware/notFoundMiddleware.js";
 import { errorHandler } from "./middleware/errorMiddleware.js";
 
 dotenv.config();
-
 console.log("JWT_SECRET loaded?", !!process.env.JWT_SECRET);
 
 connectDB();
 
 const app = express();
 
-/** ----------------------------------------------------
- * 1) Body + cookies
- * --------------------------------------------------- */
+app.use(express.json());
+
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true
+}));
 app.use(express.json());
 app.use(cookieParser());
-
-/** ----------------------------------------------------
- * 2) CORS (FIXED)
- * - Handles OPTIONS preflight correctly
- * - Sends Access-Control-Allow-Origin for your frontend
- * - Supports credentials (cookies)
- * --------------------------------------------------- */
-app.use(
-  cors({
-    origin: "https://lizard-frontend-qo5a.vercel.app",
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
-
-app.options("*", cors());
-
-
-app.use(cors(corsOptions));
-
-// helps caching/CDNs handle different origins safely
-app.use((req, res, next) => {
-  res.header("Vary", "Origin");
-  next();
-});
-
-// IMPORTANT: preflight must use SAME corsOptions
-app.options("*", cors(corsOptions));
-
-/** ----------------------------------------------------
- * 3) Session (your original behavior)
- * --------------------------------------------------- */
 if (!process.env.VERCEL) {
   app.use(
     session({
@@ -79,11 +46,12 @@ if (!process.env.VERCEL) {
   );
 }
 
-/** ----------------------------------------------------
- * 4) Routes
- * --------------------------------------------------- */
+
 app.get("/api/health", (req, res) => {
-  res.json({ status: "ok", message: "Backend is running smoothly" });
+  res.json({
+    status: "ok",
+    message: "Backend is running smoothly"
+  });
 });
 
 app.use("/api/auth", authKeyRoutes);
@@ -93,12 +61,10 @@ app.use("/api/tokens", tokenRoutes);
 app.use("/api/servicerequests", serviceRequestRoutes);
 app.use("/api/tokenrequests", tokenRequestRoutes);
 app.use("/api/partnerrequests", partnerRequestRoutes);
-app.use("/api/admin/auth", adminRoutes);
+app.use('/api/admin/auth', adminRoutes);
 
-/** ----------------------------------------------------
- * 5) Errors
- * --------------------------------------------------- */
+
 app.use(notFound);
 app.use(errorHandler);
 
-export default serverless(app);
+export default app;
