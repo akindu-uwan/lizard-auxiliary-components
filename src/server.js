@@ -36,24 +36,17 @@ app.use(cookieParser());
  * - Sends Access-Control-Allow-Origin for your frontend
  * - Supports credentials (cookies)
  * --------------------------------------------------- */
-const allowedOrigins = new Set([
-  "https://lizard-frontend-qo5a.vercel.app",
-  "http://localhost:3000",
-]);
+app.use(
+  cors({
+    origin: "https://lizard-frontend-qo5a.vercel.app",
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 
-const corsOptions = {
-  origin: (origin, cb) => {
-    // allow server-to-server / tools (no Origin header)
-    if (!origin) return cb(null, true);
+app.options("*", cors());
 
-    if (allowedOrigins.has(origin)) return cb(null, true);
-
-    return cb(new Error(`CORS blocked for origin: ${origin}`), false);
-  },
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-};
 
 app.use(cors(corsOptions));
 
