@@ -25,10 +25,7 @@ const app = express();
 app.use(express.json());
 
 app.use(cors({
-  origin: [
-    "http://localhost:3000",
-    "https://lizard-frontend-qo5a.vercel.app"
-  ],
+  Access-Control-Allow-Origin:"https://lizard-frontend-qo5a.vercel.app",
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
