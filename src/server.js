@@ -24,48 +24,33 @@ connectDB();
 const app = express();
 
 /**
- * ✅ Trust proxy (important on Vercel / HTTPS behind proxy)
- * This is required for secure cookies to work correctly.
+ * ✅ Needed on Vercel/proxy for secure cookies
  */
 app.set("trust proxy", 1);
 
 /**
- * ✅ CORS (do NOT use origin:true in production)
- * Explicitly allow your frontend + preview URLs.
+ * ✅ Body + cookies
  */
-const FRONTEND_ORIGIN = process.env.FRONTEND_URL || "http://localhost:3000";
-
-const corsOptions = {
-  origin: (origin, cb) => {
-    // allow non-browser tools (curl/postman) with no origin
-    if (!origin) return cb(null, true);
-
-    // allow exact origin
-    if (origin === FRONTEND_ORIGIN) return cb(null, true);
-
-    // allow Vercel preview deployments of your frontend
-    if (/^https:\/\/lizard-frontend-qo5a-.*\.vercel\.app$/.test(origin)) {
-      return cb(null, true);
-    }
-
-    return cb(new Error(`CORS blocked for origin: ${origin}`), false);
-  },
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-};
-
-app.use(cors(corsOptions));
-// ✅ Handle preflight for every route
-app.options("*", cors(corsOptions));
-
-/** Body + cookies */
 app.use(express.json());
 app.use(cookieParser());
 
 /**
- * ✅ Session MUST be enabled on Vercel too
- * otherwise req.session is undefined and admin login breaks.
+ * ✅ CORS (safe: allow all origins but still supports credentials)
+ * This avoids blocking /api/health and other routes.
+ */
+const corsConfig = cors({
+  origin: true,
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+});
+app.use(corsConfig);
+app.options("*", corsConfig);
+
+/**
+ * ✅ Session MUST be enabled (your admin login uses req.session)
+ * NOTE: Vercel serverless memory sessions are not reliable long-term,
+ * but this will at least stop req.session being undefined.
  */
 app.use(
   session({
@@ -81,14 +66,16 @@ app.use(
   })
 );
 
+/**
+ * Health
+ */
 app.get("/api/health", (req, res) => {
-  res.json({
-    status: "ok",
-    message: "Backend is running smoothly",
-  });
+  res.json({ status: "ok", message: "Backend is running smoothly" });
 });
 
-/** Routes */
+/**
+ * Routes
+ */
 app.use("/api/auth", authKeyRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/partners", partnerRoutes);
@@ -96,8 +83,6 @@ app.use("/api/tokens", tokenRoutes);
 app.use("/api/servicerequests", serviceRequestRoutes);
 app.use("/api/tokenrequests", tokenRequestRoutes);
 app.use("/api/partnerrequests", partnerRequestRoutes);
-
-// ✅ Keep as you had (admin routes)
 app.use("/api/admin/auth", adminRoutes);
 
 app.use(notFound);
