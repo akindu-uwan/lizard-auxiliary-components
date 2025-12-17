@@ -2,6 +2,13 @@ import jwt from "jsonwebtoken";
 
 const COOKIE_NAME = "admin_token";
 
+function isProd(req) {
+  // Vercel sets this header, and also we're always https in prod
+  const xfProto = req.headers["x-forwarded-proto"];
+  const isHttps = xfProto === "https" || req.secure;
+  return isHttps || !!process.env.VERCEL;
+}
+
 export const adminLogin = async (req, res) => {
   const { email, password } = req.body;
 
@@ -21,16 +28,14 @@ export const adminLogin = async (req, res) => {
     return res.status(500).json({ message: "JWT secret not configured" });
   }
 
-  const token = jwt.sign(
-    { isAdmin: true, email },
-    secret,
-    { expiresIn: "8h" }
-  );
+  const token = jwt.sign({ isAdmin: true, email }, secret, { expiresIn: "8h" });
+
+  const prod = isProd(req);
 
   res.cookie(COOKIE_NAME, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    secure: prod,          // ✅ true on vercel/https
+    sameSite: prod ? "none" : "lax", // ✅ required for cross-site cookie
     maxAge: 1000 * 60 * 60 * 8,
     path: "/",
   });
@@ -39,10 +44,12 @@ export const adminLogin = async (req, res) => {
 };
 
 export const adminLogout = async (req, res) => {
+  const prod = isProd(req);
+
   res.clearCookie(COOKIE_NAME, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    secure: prod,
+    sameSite: prod ? "none" : "lax",
     path: "/",
   });
 
