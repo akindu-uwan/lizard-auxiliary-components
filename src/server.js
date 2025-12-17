@@ -27,8 +27,20 @@ app.set("trust proxy", 1);
 app.use(express.json());
 app.use(cookieParser());
 
+const allowlist = [
+  "https://lizard-frontend-qo5a.vercel.app",
+  "http://localhost:3000",
+];
+
 const corsOptions = {
-  origin: true,
+  origin: (origin, cb) => {
+    // allow non-browser requests (server-to-server, Postman, etc.)
+    if (!origin) return cb(null, true);
+
+    if (allowlist.includes(origin)) return cb(null, true);
+
+    return cb(new Error("CORS blocked for origin: " + origin));
+  },
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
@@ -36,6 +48,7 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.options(/.*/, cors(corsOptions));
+
 
 // ✅ Session
 app.use(
