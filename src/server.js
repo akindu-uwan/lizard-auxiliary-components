@@ -3,7 +3,6 @@ import cors from "cors";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import session from "express-session";
-
 import { connectDB } from "./config/db.js";
 import serviceRoutes from "./routes/serviceRoutes.js";
 import partnerRoutes from "./routes/partnerRoutes.js";
@@ -23,59 +22,38 @@ connectDB();
 
 const app = express();
 
-/**
- * ✅ Needed on Vercel/proxy for secure cookies
- */
-app.set("trust proxy", 1);
+app.use(express.json());
 
-/**
- * ✅ Body + cookies
- */
+app.use(cors({
+  origin: true, // Allow all origins (not recommended for production)
+  credentials: true
+}));
 app.use(express.json());
 app.use(cookieParser());
+if (!process.env.VERCEL) {
+  app.use(
+    session({
+      secret: process.env.SESSION_SECRET || "your-secret-key",
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        secure: process.env.NODE_ENV === "production",
+        httpOnly: true,
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        maxAge: 1000 * 60 * 60 * 8,
+      },
+    })
+  );
+}
 
-/**
- * ✅ CORS (safe: allow all origins but still supports credentials)
- * This avoids blocking /api/health and other routes.
- */
-const corsConfig = cors({
-  origin: true,
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-});
-app.use(corsConfig);
-app.options("*", corsConfig);
 
-/**
- * ✅ Session MUST be enabled (your admin login uses req.session)
- * NOTE: Vercel serverless memory sessions are not reliable long-term,
- * but this will at least stop req.session being undefined.
- */
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET || "your-secret-key",
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // true on https
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      maxAge: 1000 * 60 * 60 * 8,
-    },
-  })
-);
-
-/**
- * Health
- */
 app.get("/api/health", (req, res) => {
-  res.json({ status: "ok", message: "Backend is running smoothly" });
+  res.json({
+    status: "ok",
+    message: "Backend is running smoothly"
+  });
 });
 
-/**
- * Routes
- */
 app.use("/api/auth", authKeyRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/partners", partnerRoutes);
@@ -83,7 +61,8 @@ app.use("/api/tokens", tokenRoutes);
 app.use("/api/servicerequests", serviceRequestRoutes);
 app.use("/api/tokenrequests", tokenRequestRoutes);
 app.use("/api/partnerrequests", partnerRequestRoutes);
-app.use("/api/admin/auth", adminRoutes);
+app.use('/api/admin/auth', adminRoutes);
+
 
 app.use(notFound);
 app.use(errorHandler);
