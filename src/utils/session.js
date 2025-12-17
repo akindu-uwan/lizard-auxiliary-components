@@ -23,7 +23,14 @@ export function signSession(res, payload) {
 }
 
 export function clearSession(res) {
-  res.clearCookie(COOKIE_NAME, { path: "/" });
+  const isProd = process.env.NODE_ENV === "production";
+
+  res.clearCookie(COOKIE_NAME, {
+    path: "/",
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
+  });
 }
 
 export function readSession(req) {
