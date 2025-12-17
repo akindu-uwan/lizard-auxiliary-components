@@ -22,16 +22,22 @@ connectDB();
 
 const app = express();
 
-app.use(express.json());
-
-app.use(cors({
-  origin: true, // Allow all origins (not recommended for production)
-  credentials: true
-}));
-app.use(express.json());
-app.use(cookieParser());
 app.set("trust proxy", 1);
 
+app.use(express.json());
+app.use(cookieParser());
+
+const corsOptions = {
+  origin: true,
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+
+app.use(cors(corsOptions));
+app.options(/.*/, cors(corsOptions));
+
+// ✅ Session
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "your-secret-key",
@@ -46,12 +52,10 @@ app.use(
   })
 );
 
-
-
 app.get("/api/health", (req, res) => {
   res.json({
     status: "ok",
-    message: "Backend is running smoothly"
+    message: "Backend is running smoothly",
   });
 });
 
@@ -62,8 +66,7 @@ app.use("/api/tokens", tokenRoutes);
 app.use("/api/servicerequests", serviceRequestRoutes);
 app.use("/api/tokenrequests", tokenRequestRoutes);
 app.use("/api/partnerrequests", partnerRequestRoutes);
-app.use('/api/admin/auth', adminRoutes);
-
+app.use("/api/admin/auth", adminRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
